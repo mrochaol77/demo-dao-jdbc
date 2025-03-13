@@ -109,8 +109,57 @@ public class SellerDaoJDBC implements SellerDao {
 
 	@Override
 	public List<Seller> findAll() {
-		// TODO Auto-generated method stub
-		return null;
+
+		PreparedStatement st = null;
+		ResultSet rs = null;
+		
+		try {
+			
+			// query
+			st = conn.prepareStatement(
+					"SELECT seller.*,department.Name as DepName "
+					+ "FROM seller INNER JOIN department "
+					+ "ON seller.DepartmentId = department.Id "
+					+ "ORDER BY Name");
+			
+			// executing query
+			rs = st.executeQuery();
+			
+			// creating seller list
+			List<Seller> list = new ArrayList<>();
+			
+			// declaration to controlling if department already exists on department object
+			Map<Integer, Department> map = new HashMap<>();
+			
+			// while have any row, add data in list
+			while (rs.next()) {
+				
+				// searching if department already exists on department object
+				Department dep = map.get(rs.getInt("DepartmentId"));
+				
+				if (dep == null ) {
+					// reusing code with instantiate function
+					dep = instantiateDepartment(rs);
+					// adding department on map to not duplicate on next rows of resultset
+					map.put(rs.getInt("DepartmentId"), dep);
+				}
+						
+				Seller seller = instantiateSeller(rs, dep);
+				list.add(seller);
+			}			
+
+			// returning list of seller object
+			return list;
+			
+		}
+		catch (SQLException e) {
+			throw new DbException(e.getMessage());
+		}
+		finally {
+			DB.closeStatement(st);
+			DB.closeResultSet(rs);
+		}
+
 	}
 
 	@Override
@@ -169,7 +218,6 @@ public class SellerDaoJDBC implements SellerDao {
 			DB.closeStatement(st);
 			DB.closeResultSet(rs);
 		}
-		
 
 	}
 
